@@ -6,9 +6,11 @@ RepoCall is an AI-powered **developer context-recovery agent**. Paste a public G
 
 Built for the **AWS Zero to Shipped** hackathon.
 
-- **Live demo:** http://repocall-frontend-678503489298.s3-website.us-east-1.amazonaws.com/
+- **Live demo:** https://d2k6169o8w197f.cloudfront.net/
 - **API:** https://j5n58xfskf.execute-api.us-east-1.amazonaws.com
 - **Repository:** <https://github.com/minhazexo/repo-call>
+
+*Underlying S3 deployment (origin):* `http://repocall-frontend-678503489298.s3-website.us-east-1.amazonaws.com/`
 
 ## Problem
 
@@ -144,6 +146,20 @@ aws s3api put-bucket-policy --bucket your-bucket-name --policy '{"Version":"2012
 
 You get a public `http://your-bucket-name.s3-website.us-east-1.amazonaws.com` URL.
 
+**Optional: HTTPS via CloudFront** (recommended for production demos)
+
+```powershell
+# Create CloudFront distribution in front of the S3 website endpoint
+# (Use the S3 website endpoint as custom origin, NOT the REST endpoint)
+aws cloudfront create-distribution --distribution-config file://cloudfront-config.json
+```
+
+The CloudFront distribution provides:
+- HTTPS with default CloudFront certificate (`https://<distribution-id>.cloudfront.net/`)
+- Automatic HTTP-to-HTTPS redirect
+- SPA fallback via custom error responses (404/403 → `/index.html`)
+- Compression and caching via managed cache policy
+
 *Amplify Hosting (`amplify.yml` included) is also supported as an alternative — see the Amplify section in `docs/aws-agent-evidence.md`.*
 
 ### 4. Post-deploy verification
@@ -155,7 +171,7 @@ Invoke-RestMethod "$Api/analyze" -Method Post -ContentType "application/json" `
   -Body '{"repositoryUrl":"https://github.com/axios/axios"}' -TimeoutSec 180
 ```
 
-Then: open the S3 website URL, run a real analysis, check evidence links, browser console (no errors), and CloudWatch logs (`/aws/lambda/RepoCallStack-AnalyzeFunction…`). See `docs/aws-agent-evidence.md` for the full checklist and screenshot list.
+Then: open the CloudFront HTTPS URL (or S3 website URL), run a real analysis, check evidence links, browser console (no errors), and CloudWatch logs (`/aws/lambda/RepoCallStack-AnalyzeFunction…`). See `docs/aws-agent-evidence.md` for the full checklist and screenshot list.
 
 ## Limitations
 

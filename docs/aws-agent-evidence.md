@@ -71,9 +71,20 @@ Backend (all performed by the agent against the live stack):
 Frontend (S3 static website, deployed by agent):
 
 6. `aws s3 sync` → `s3://repocall-frontend-678503489298` → static website hosting enabled ✅
-7. Public URL: http://repocall-frontend-678503489298.s3-website.us-east-1.amazonaws.com/
+7. Public URL (S3 origin): http://repocall-frontend-678503489298.s3-website.us-east-1.amazonaws.com/
 8. End-to-end test from S3 origin: `POST /analyze` with `Origin` header → 200, CORS `*`,
    full Nova Lite analysis, valid evidence links ✅
+
+**CloudFront HTTPS distribution (added for production demo):**
+
+9. Created CloudFront distribution `E1JVEPNMBMLDEX` with S3 website endpoint as custom origin
+10. Domain: `https://d2k6169o8w197f.cloudfront.net/` (HTTPS, default CloudFront certificate)
+11. Viewer protocol: Redirect HTTP → HTTPS
+12. Custom error responses: 404/403 → `/index.html` (SPA fallback)
+13. Compression enabled, managed cache policy (CachingOptimized)
+14. Verified: `GET https://d2k6169o8w197f.cloudfront.net/` → 200, RepoCall landing page loads
+15. Verified: `POST /analyze` from CloudFront origin → 200, CORS `*`, full Nova Lite analysis ✅
+16. Verified: SPA fallback works (404 → index.html served correctly)
 
 ## 6. Screenshots captured (hackathon evidence)
 
@@ -83,6 +94,8 @@ Frontend (S3 static website, deployed by agent):
 4. `04-evidence.png` — blockers, next 3 actions, evidence grid.
 5. `05-api-proof.png` — terminal: `curl {ApiUrl}/health` → `{"status":"ok"}` plus
    `POST /analyze` returning `"success":true,"model":"amazon.nova-lite-v1:0"`.
+
+**Production HTTPS URL:** https://d2k6169o8w197f.cloudfront.net/
 
 **AWS Console verification (documented, not a repository screenshot):**
 The agent verified all deployed AWS resources via CLI and SDK:
