@@ -77,21 +77,21 @@ Frontend (S3 static website, deployed by agent):
 
 ## 6. Screenshots to capture (hackathon evidence)
 
-1. `01-landing.png` — Amplify URL showing the RepoCall hero + URL input.
+1. `01-landing.png` — S3 website showing the RepoCall hero + URL input.
 2. `02-loading.png` — skeleton UI mid-analysis.
-3. `03-dashboard-top.png` — project overview + Resume-in-5-Minutes.
-4. `04-dashboard-actions-evidence.png` — blockers, next 3 actions, evidence grid.
+3. `03-dashboard.png` — project overview + Resume-in-5-Minutes.
+4. `04-evidence.png` — blockers, next 3 actions, evidence grid.
 5. `05-api-proof.png` — terminal: `curl {ApiUrl}/health` → `{"status":"ok"}` plus
    `POST /analyze` returning `"success":true,"model":"amazon.nova-lite-v1:0"`.
 6. `06-aws-console.png` — (a) API Gateway `RepoCall` routes, (b) Lambda function overview,
-   (c) Bedrock → Model access showing Nova Lite/Micro enabled, (d) Amplify deployment “Deployed”.
-7. `07-logs.png` — CloudWatch log stream for a successful invocation (redact account IDs if you prefer).
+   (c) Bedrock → Model access showing Nova Lite/Micro enabled, (d) S3 static website hosting enabled.
 
 ## 7. Remaining submission steps (owner)
 
 - [ ] Enable Bedrock model access (Nova Lite + Nova Micro, us-east-1).
 - [ ] Run `scripts/deploy-backend.ps1` with AWS credentials; record `ApiUrl`.
-- [ ] Amplify: connect repo, set `VITE_API_BASE_URL`, deploy; record public URL.
+- [ ] Deploy frontend to S3 static website hosting; record public URL.
 - [ ] Run the §5 verification; capture the §6 screenshots into `docs/screenshots/`.
+- [ ] **MANUAL**: Capture `06-aws-console.png` from AWS Console (cannot be automated).
 - [ ] Fill the `Live demo` / `API` / `Screenshots` placeholders in `README.md`.
 - [ ] Push to `https://github.com/minhazexo/repo-call` and submit.

@@ -40,7 +40,7 @@ This is **not a README summarizer** — it weighs recent commits, unresolved iss
 
 ```mermaid
 flowchart LR
-    User([Developer]) -->|paste repo URL| Web[React + Vite + Tailwind\nAmplify Hosting]
+    User([Developer]) -->|paste repo URL| Web[React + Vite + Tailwind\nS3 Static Website]
     Web -->|POST /analyze| API[API Gateway HTTP API]
     API --> Fn[Lambda · Node.js 20\nvalidate → collect → Bedrock]
     Fn -->|public REST| GH[(GitHub API\nmetadata, README, commits,\nissues, branches, files)]
@@ -57,7 +57,7 @@ flowchart LR
 | API Gateway HTTP API | `GET /health`, `POST /analyze`, CORS |
 | IAM | Least-privilege Bedrock `InvokeModel*` on the two Nova models |
 | CloudWatch Logs | 1-week retention Lambda logs |
-| Amplify Hosting | Public frontend (React/Vite/Tailwind) |
+| **S3 Static Website** | **Public frontend (React/Vite/Tailwind)** |
 | Bedrock (Nova Lite → Nova Micro fallback) | Context-recovery reasoning via Converse API |
 
 ### Repository layout
@@ -68,7 +68,7 @@ apps/api    Node.js + TypeScript Lambda API (Bedrock Converse, GitHub collector)
 infra       AWS CDK stack (HTTP API, Lambda, IAM, logs)
 docs        hackathon.md, aws-agent-evidence.md
 scripts     deploy-backend.ps1 (guided AWS deploy + verify)
-amplify.yml Amplify Hosting build config
+amplify.yml Amplify Hosting build config (alternative to S3)
 ```
 
 ## Bedrock usage
@@ -127,13 +127,24 @@ powershell -ExecutionPolicy Bypass -File ./scripts/deploy-backend.ps1
 
 Note the `ApiUrl` output — e.g. `https://abc123.execute-api.us-east-1.amazonaws.com/`.
 
-### 3. Frontend (Amplify Hosting)
+### 3. Frontend (S3 Static Website Hosting)
 
-1. Push this repo to GitHub.
-2. AWS Console → Amplify → New app → Host web app → connect `minhazexo/repo-call`.
-3. Build settings: `amplify.yml` is auto-detected.
-4. Environment variable: `VITE_API_BASE_URL` = your `ApiUrl` (no trailing slash).
-5. Deploy → you get a public `https://….amplifyapp.com` URL. Redeploy triggers on every push.
+```powershell
+# Build the frontend
+$env:VITE_API_BASE_URL = "https://your-api-url.execute-api.us-east-1.amazonaws.com"
+npm run build --workspace=apps/web
+
+# Deploy to S3
+aws s3 mb s3://your-bucket-name --region us-east-1
+aws s3 sync apps/web/dist s3://your-bucket-name --delete
+aws s3 website s3://your-bucket-name --index-document index.html --error-document index.html
+aws s3api put-public-access-block --bucket your-bucket-name --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+aws s3api put-bucket-policy --bucket your-bucket-name --policy '{"Version":"2012-10-17","Statement":[{"Sid":"PublicReadGetObject","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::your-bucket-name/*"}]}'
+```
+
+You get a public `http://your-bucket-name.s3-website.us-east-1.amazonaws.com` URL.
+
+*Amplify Hosting (`amplify.yml` included) is also supported as an alternative — see the Amplify section in `docs/aws-agent-evidence.md`.*
 
 ### 4. Post-deploy verification
 
@@ -144,7 +155,7 @@ Invoke-RestMethod "$Api/analyze" -Method Post -ContentType "application/json" `
   -Body '{"repositoryUrl":"https://github.com/axios/axios"}' -TimeoutSec 180
 ```
 
-Then: open the Amplify URL, run a real analysis, check evidence links, browser console (no errors), and CloudWatch logs (`/aws/lambda/RepoCallStack-AnalyzeFunction…`). See `docs/aws-agent-evidence.md` for the full checklist and screenshot list.
+Then: open the S3 website URL, run a real analysis, check evidence links, browser console (no errors), and CloudWatch logs (`/aws/lambda/RepoCallStack-AnalyzeFunction…`). See `docs/aws-agent-evidence.md` for the full checklist and screenshot list.
 
 ## Limitations
 
@@ -164,11 +175,26 @@ Then: open the Amplify URL, run a real analysis, check evidence links, browser c
 
 ## Screenshots
 
-`<!-- TODO: add screenshots — see docs/aws-agent-evidence.md for the exact capture list -->`
+### Landing page
 
-1. Landing page (`docs/screenshots/01-landing.png`)
-2. Loading skeleton (`docs/screenshots/02-loading.png`)
-3. Dashboard — overview + resume briefing (`docs/screenshots/03-dashboard.png`)
-4. Blockers / next actions / evidence (`docs/screenshots/04-evidence.png`)
-5. Health check + real analysis terminal output (`docs/screenshots/05-api-proof.png`)
-6. Amplify + Bedrock console proof (`docs/screenshots/06-aws-console.png`)
+![RepoCall landing page](docs/screenshots/01-landing.png)
+
+### Loading state
+
+![RepoCall loading state](docs/screenshots/02-loading.png)
+
+### Context recovery dashboard
+
+![RepoCall dashboard](docs/screenshots/03-dashboard.png)
+
+### Evidence and next actions
+
+![RepoCall evidence](docs/screenshots/04-evidence.png)
+
+### Production API verification
+
+![RepoCall API proof](docs/screenshots/05-api-proof.png)
+
+### AWS deployment evidence
+
+![AWS deployment evidence](docs/screenshots/06-aws-console.png)

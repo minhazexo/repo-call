@@ -25,7 +25,7 @@ A summarizer reads the README. A **context-recovery agent** weighs *multiple, so
 - **Amazon Bedrock, Converse API** — Nova Lite primary, Nova Micro automatic fallback, `us-east-1`. Strict-JSON system prompt with untrusted-data framing and an evidence-URL allowlist.
 - **IAM** — least privilege: `bedrock:InvokeModel*` on the two Nova foundation-model ARNs only.
 - **CloudWatch Logs** — one-week retention.
-- **Amplify Hosting** — public React/Vite/Tailwind frontend (`amplify.yml` included).
+- **S3 Static Website Hosting** — public React/Vite/Tailwind frontend.
 
 See the Mermaid diagram in `README.md`.
 
@@ -53,14 +53,14 @@ The agent (OpenCode / Muse Spark session) scaffolded the monorepo, implemented t
 
 1. `aws configure` (keys with CloudFormation/Lambda/APIGW/IAM/Logs rights) + enable Nova Lite/Micro in Bedrock console.
 2. `powershell -ExecutionPolicy Bypass -File ./scripts/deploy-backend.ps1` — installs, typechecks, tests, bootstraps, deploys, then hits `/health` and a real `/analyze`.
-3. Amplify: connect the GitHub repo, set `VITE_API_BASE_URL`, deploy.
-4. Run the 9-step post-deploy verification in `docs/aws-agent-evidence.md`.
+3. Build frontend (`$env:VITE_API_BASE_URL=... npm run build --workspace=apps/web`) and deploy to S3 static website hosting.
+4. Run the post-deploy verification in `docs/aws-agent-evidence.md`.
 
 ## Demo instructions (under 2 minutes)
 
 Good demo repos (meaningful README, many commits, open issues): `axios/axios`, `vercel/swr`, `sveltejs/kit`.
 
-1. Open the Amplify URL (0:00).
+1. Open the S3 website URL (0:00).
 2. Paste `https://github.com/axios/axios`, click **Recover Context** (0:10).
 3. While it works, note the skeleton + “collecting evidence → Bedrock” caption (0:20).
 4. Show **Project Goal** and **Where You Stopped** (0:50).
