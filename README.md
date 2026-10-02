@@ -6,8 +6,8 @@ RepoCall is an AI-powered **developer context-recovery agent**. Paste a public G
 
 Built for the **AWS Zero to Shipped** hackathon.
 
-- **Live demo:** `<!-- TODO: paste Amplify URL -->`
-- **API:** `<!-- TODO: paste API Gateway URL -->`
+- **Live demo:** https://staging.d3un7cus35te8z.amplifyapp.com/
+- **API:** https://j5n58xfskf.execute-api.us-east-1.amazonaws.com
 - **Repository:** <https://github.com/minhazexo/repo-call>
 
 ## Problem
