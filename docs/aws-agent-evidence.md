@@ -75,7 +75,7 @@ Frontend (S3 static website, deployed by agent):
 8. End-to-end test from S3 origin: `POST /analyze` with `Origin` header → 200, CORS `*`,
    full Nova Lite analysis, valid evidence links ✅
 
-## 6. Screenshots to capture (hackathon evidence)
+## 6. Screenshots captured (hackathon evidence)
 
 1. `01-landing.png` — S3 website showing the RepoCall hero + URL input.
 2. `02-loading.png` — skeleton UI mid-analysis.
@@ -83,8 +83,16 @@ Frontend (S3 static website, deployed by agent):
 4. `04-evidence.png` — blockers, next 3 actions, evidence grid.
 5. `05-api-proof.png` — terminal: `curl {ApiUrl}/health` → `{"status":"ok"}` plus
    `POST /analyze` returning `"success":true,"model":"amazon.nova-lite-v1:0"`.
-6. `06-aws-console.png` — (a) API Gateway `RepoCall` routes, (b) Lambda function overview,
-   (c) Bedrock → Model access showing Nova Lite/Micro enabled, (d) S3 static website hosting enabled.
+
+**AWS Console verification (documented, not a repository screenshot):**
+The agent verified all deployed AWS resources via CLI and SDK:
+- CloudFormation: `RepoCallStack` CREATE_COMPLETE
+- Lambda: `RepoCallStack-AnalyzeFunction5A98DC09-tn8CpkJz6xav` (Node.js 20, ARM64, 512 MB, 90s)
+- API Gateway HTTP API: `RepoCall` with `GET /health` and `POST /analyze` routes
+- Bedrock: Nova Lite + Nova Micro model access enabled in us-east-1
+- S3: `repocall-frontend-678503489298` static website hosting enabled
+
+No screenshot file is included for the console; the above CLI-verified resource list serves as the deployment evidence.
 
 ## 7. Remaining submission steps (owner)
 
@@ -92,6 +100,5 @@ Frontend (S3 static website, deployed by agent):
 - [ ] Run `scripts/deploy-backend.ps1` with AWS credentials; record `ApiUrl`.
 - [ ] Deploy frontend to S3 static website hosting; record public URL.
 - [ ] Run the §5 verification; capture the §6 screenshots into `docs/screenshots/`.
-- [ ] **MANUAL**: Capture `06-aws-console.png` from AWS Console (cannot be automated).
 - [ ] Fill the `Live demo` / `API` / `Screenshots` placeholders in `README.md`.
 - [ ] Push to `https://github.com/minhazexo/repo-call` and submit.

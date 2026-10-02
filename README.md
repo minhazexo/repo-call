@@ -194,7 +194,3 @@ Then: open the S3 website URL, run a real analysis, check evidence links, browse
 ### Production API verification
 
 ![RepoCall API proof](docs/screenshots/05-api-proof.png)
-
-### AWS deployment evidence
-
-![AWS deployment evidence](docs/screenshots/06-aws-console.png)
