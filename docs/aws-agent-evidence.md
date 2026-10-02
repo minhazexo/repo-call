@@ -1,68 +1,78 @@
 # AWS Agent Evidence — RepoCall
 
-> This document records honestly what the coding agent did and did not do with AWS,
-> so the hackathon submission never over-claims.
+> Build log: what the coding agent did with AWS, step by step. Updated after each phase.
 
 ## 1. How the agent was connected to AWS
 
-**The agent was NOT connected to AWS at build time.** The sandbox had:
+Via the official **Agent Toolkit for AWS** setup flow (`setup.md`):
 
-- ❌ no AWS CLI (`aws` not installed)
-- ❌ no AWS credentials (`AWS_ACCESS_KEY_ID` / profiles absent)
-- ❌ no AWS MCP / Agent Toolkit tooling available in the session
-- ✅ Node.js 24 + npm (used for the full local build & verification)
+- Installed `uv` 0.12.22 and used the pre-installed **AWS CLI 2.37.8**.
+- Authenticated with `aws login --profile repocall` (browser flow, no static keys).
+  Credentials: account `678503489298`, root session, region `us-east-1`.
+- Ran `aws configure agent-toolkit --yes --region us-east-1 --profile repocall`:
+  24 default AWS skills installed; MCP `aws-mcp` entries added for Claude Code
+  (`~/.claude.json`) and Cline (`~/.cline/mcp.json`).
+- Patched both `aws-mcp` entries with `"env": {"AWS_MCP_PROXY_PROFILES": "repocall"}`.
+- Verified with `aws agent-toolkit list-available-skills` (JSON catalog returned).
+- Added advanced-experience rules to `AGENTS.md` (project root).
+- Loaded the `aws-cdk` and `amazon-bedrock` skills and followed them
+  (diff-before-deploy, Converse API, explicit maxTokens, model-access checks).
 
-The owner chose “I’ll provide access keys” for deployment, to happen **after** the build.
-Therefore **no AWS resources were created, modified, or inspected by the agent**. Everything
-below that requires AWS is a prepared, runnable procedure — not a completed action.
+## 2. What the agent actually did
 
-## 2. What the agent actually did (verifiable locally)
-
-| # | Action | How to verify |
+| # | Action | Result |
 |---|---|---|
-| 1 | Scaffolded monorepo (`apps/web`, `apps/api`, `infra`, `docs`, `amplify.yml`, deploy script) | `ls` the repo |
-| 2 | Implemented Lambda API: `GET /health`, `POST /analyze`, GitHub collector, Bedrock Converse client | Read `apps/api/src/` |
-| 3 | Implemented React dashboard with all required states + localStorage | Read `apps/web/src/` |
-| 4 | Wrote CDK stack (HTTP API + Lambda + IAM least-privilege + logs) | Read `infra/lib/repocall-stack.ts` |
-| 5 | `npm run typecheck` across workspaces | Re-run, expect 0 errors |
-| 6 | `npm run lint` (eslint, zero-warning policy) | Re-run, expect clean |
-| 7 | `npm run test --workspace=apps/api` (vitest: validate, collector utils, Bedrock allowlist, router) | Re-run, expect all pass |
-| 8 | Frontend `vite build` | Re-run `npm run build --workspace=apps/web` |
-| 9 | `cdk synth` (no credentials needed) | Re-run `npm run synth --workspace=infra`, inspect `cdk.out/` |
+| 1 | Scaffolded monorepo + implemented API, frontend, CDK, docs | Committed locally |
+| 2 | Local verify: typecheck, lint (0 warnings), 21/21 vitest, `vite build`, `cdk synth` | All green |
+| 3 | Live local HTTP smoke test (`/health`, `INVALID_URL`, real GitHub collection) | Passed |
+| 4 | `aws bedrock list-foundation-models` — Nova Lite + Nova Micro ACTIVE in us-east-1 | Confirmed |
+| 5 | `cdk bootstrap aws://678503489298/us-east-1` (first attempt failed: account not yet activated; succeeded after owner completed signup) | Bootstrapped |
+| 6 | `cdk diff` reviewed, then `cdk deploy` | `RepoCallStack` CREATE_COMPLETE in 58s |
+| 7 | `GET /health` → `{"status":"ok"}` | Passed |
+| 8 | CORS: preflight `204` + `GET` with `Origin` returns `access-control-allow-origin: *` | Passed |
+| 9 | CloudWatch logs: invocations show START/END/REPORT, no exceptions | Passed |
+| 10 | `POST /analyze` (axios/axios): GitHub evidence collected OK; Bedrock blocked, see §5 | Partial |
 
-## 3. AWS actions performed by the agent
+## 3. AWS resources created by the agent
 
-**None.** No `sts:get-caller-identity`, no `cdk deploy`, no console changes, no log inspection.
-Any submission text must say the deployment was performed by the owner following the prepared
-procedure — or update this file after a live agent-driven deploy.
-
-## 4. Resources to be created (by `scripts/deploy-backend.ps1`)
+API base: `https://j5n58xfskf.execute-api.us-east-1.amazonaws.com/`
 
 | Resource | Details |
 |---|---|
-| `RepoCallStack` (CloudFormation) | us-east-1 |
-| Lambda `RepoCallStack-AnalyzeFunction…` | Node.js 20, ARM64, 512 MB, 90 s timeout |
+| `RepoCallStack` (CloudFormation) | `arn:aws:cloudformation:us-east-1:678503489298:stack/RepoCallStack/bc7a0c80-…` |
+| Lambda `RepoCallStack-AnalyzeFunction5A98DC09-tn8CpkJz6xav` | Node.js 20, ARM64, 512 MB, 90 s timeout |
 | API Gateway HTTP API `RepoCall` | `$default` stage, routes `GET /health`, `POST /analyze` |
 | IAM role policy | `bedrock:InvokeModel*` on Nova Lite + Nova Micro foundation-model ARNs |
-| CloudWatch Log Group | `/aws/lambda/RepoCallStack-AnalyzeFunction…`, 1-week retention |
-| Amplify app (console steps in README) | hosts `apps/web/dist`, env `VITE_API_BASE_URL` |
+| CloudWatch Log Group | `/aws/lambda/RepoCallStack-AnalyzeFunction5A98DC09-tn8CpkJz6xav`, 1-week retention |
 
-Bedrock model used: **`amazon.nova-lite-v1:0`** (primary) with automatic fallback to
+Bedrock model: **`amazon.nova-lite-v1:0`** (primary) with automatic fallback to
 **`amazon.nova-micro-v1:0`**, via the **Converse API**.
 
-## 5. How deployment WILL be verified (owner runbook)
+## 4. Known blocker (owner action, in progress)
 
-After running `scripts/deploy-backend.ps1`:
+Brand-new AWS account: Bedrock returns *"Your account is currently being verified…
+you may not have access to this operation."* Everything else in the chain is proven
+working (GitHub collection succeeds inside Lambda; only the Bedrock call is refused).
+Owner steps: (a) Bedrock console → Model access → enable Nova Lite + Nova Micro,
+(b) wait for account verification (< 2 h typical), then tell the agent to retry
+`POST /analyze`. No redeploy needed.
 
-1. `GET {ApiUrl}/health` → `{"status":"ok"}` (script does this automatically).
-2. `POST {ApiUrl}/analyze` `{"repositoryUrl":"https://github.com/axios/axios"}` → `success:true`,
-   `meta.model` starts with `amazon.nova-` (script smoke-tests this).
-3. Open the Amplify URL publicly; run a real analysis end-to-end.
-4. Confirm Bedrock output sections render (goal, stopping point, blockers, next actions).
-5. Click 2–3 evidence cards → they open real GitHub commits/issues/files.
-6. DevTools console: no errors; Network tab: `/analyze` is `200`.
-7. CORS: response includes `access-control-allow-origin`.
-8. CloudWatch: `aws logs tail /aws/lambda/<FunctionName> --follow` shows the invocation, no exceptions.
+## 5. How deployment WAS verified (agent runbook, with results)
+
+Backend (all performed by the agent against the live stack):
+
+1. `GET {ApiUrl}/health` → `{"status":"ok"}` ✅
+2. `POST {ApiUrl}/analyze` `{"repositoryUrl":"https://github.com/axios/axios"}` →
+   GitHub evidence collected; Bedrock pending account verification ⏳ (retry after §4)
+3. CORS preflight + `Origin` request headers ✅ (see §2 row 8)
+4. CloudWatch log tail: clean invocations, no exceptions ✅
+5. IAM: Lambda role holds only `bedrock:InvokeModel*` on the two Nova ARNs + basic execution ✅
+
+Frontend (owner steps — requires GitHub push + Amplify console):
+
+6. `git remote add origin https://github.com/minhazexo/repo-call.git; git push -u origin master`
+7. Amplify → Host web app → connect repo, set `VITE_API_BASE_URL=https://j5n58xfskf.execute-api.us-east-1.amazonaws.com`
+8. Open the Amplify URL, run a real analysis, click evidence links, check console.
 
 ## 6. Screenshots to capture (hackathon evidence)
 
