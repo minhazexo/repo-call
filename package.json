@@ -1,0 +1,32 @@
+{
+  "name": "repocall",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RepoCall — AI-powered developer context-recovery agent. Remember where your code left off.",
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "infra"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings 0",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspace=apps/api",
+    "synth": "npm run synth --workspace=infra",
+    "deploy:backend": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-backend.ps1",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web"
+  },
+  "devDependencies": {
+    "eslint": "^9.14.0",
+    "globals": "^15.11.0",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

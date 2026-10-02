@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+cdk.out/
+*.tsbuildinfo
+coverage/
+
+# Env
+.env
+.env.local
+.env*.local
+apps/web/.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Amplify
+amplify/

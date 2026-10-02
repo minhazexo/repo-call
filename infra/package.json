@@ -1,0 +1,27 @@
+{
+  "name": "@repocall/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --require-approval never",
+    "diff": "cdk diff",
+    "lint": "eslint bin lib"
+  },
+  "dependencies": {
+    "aws-cdk": "^2.1144.0",
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "esbuild": "^0.24.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

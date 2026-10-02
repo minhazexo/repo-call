@@ -1,0 +1,17 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        # VITE_API_BASE_URL must be set in the Amplify console (hosted backend API URL)
+        - npm run build --workspace=apps/web
+  artifacts:
+    baseDirectory: apps/web/dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
