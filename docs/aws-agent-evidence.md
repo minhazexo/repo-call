@@ -62,16 +62,18 @@ Backend (all performed by the agent against the live stack):
 
 1. `GET {ApiUrl}/health` → `{"status":"ok"}` ✅
 2. `POST {ApiUrl}/analyze` `{"repositoryUrl":"https://github.com/axios/axios"}` →
-   GitHub evidence collected; Bedrock pending account verification ⏳ (retry after §4)
-3. CORS preflight + `Origin` request headers ✅ (see §2 row 8)
-4. CloudWatch log tail: clean invocations, no exceptions ✅
+   `success:true`, `meta.model: amazon.nova-lite-v1:0`: real goal/state/stop-point, 2 blockers,
+   3 prioritized actions, 6 evidence items, 0 off-repo URLs, 2 sampled evidence URLs return HTTP 200 ✅
+3. CORS preflight + `Origin` request headers ✅
+4. CloudWatch: Bedrock invocation REPORT ~14 s, no exceptions ✅
 5. IAM: Lambda role holds only `bedrock:InvokeModel*` on the two Nova ARNs + basic execution ✅
 
-Frontend (owner steps — requires GitHub push + Amplify console):
+Frontend (S3 static website, deployed by agent):
 
-6. `git remote add origin https://github.com/minhazexo/repo-call.git; git push -u origin master`
-7. Amplify → Host web app → connect repo, set `VITE_API_BASE_URL=https://j5n58xfskf.execute-api.us-east-1.amazonaws.com`
-8. Open the Amplify URL, run a real analysis, click evidence links, check console.
+6. `aws s3 sync` → `s3://repocall-frontend-678503489298` → static website hosting enabled ✅
+7. Public URL: http://repocall-frontend-678503489298.s3-website.us-east-1.amazonaws.com/
+8. End-to-end test from S3 origin: `POST /analyze` with `Origin` header → 200, CORS `*`,
+   full Nova Lite analysis, valid evidence links ✅
 
 ## 6. Screenshots to capture (hackathon evidence)
 
