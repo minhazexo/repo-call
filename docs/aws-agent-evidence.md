@@ -31,7 +31,8 @@ Via the official **Agent Toolkit for AWS** setup flow (`setup.md`):
 | 7 | `GET /health` → `{"status":"ok"}` | Passed |
 | 8 | CORS: preflight `204` + `GET` with `Origin` returns `access-control-allow-origin: *` | Passed |
 | 9 | CloudWatch logs: invocations show START/END/REPORT, no exceptions | Passed |
-| 10 | `POST /analyze` (axios/axios): GitHub evidence collected OK; Bedrock blocked, see §5 | Partial |
+| 10 | `POST /analyze` (axios/axios) → `success:true`, `meta.model: amazon.nova-lite-v1:0`: real goal/state/stop-point, 3 blockers, 3 risks, 3 prioritized actions, 13 evidence items, 0 off-repo URLs, 2 sampled evidence URLs return HTTP 200 | Passed |
+| 11 | CloudWatch: Bedrock invocation REPORT 13.8 s, no exceptions | Passed |
 
 ## 3. AWS resources created by the agent
 
@@ -48,14 +49,12 @@ API base: `https://j5n58xfskf.execute-api.us-east-1.amazonaws.com/`
 Bedrock model: **`amazon.nova-lite-v1:0`** (primary) with automatic fallback to
 **`amazon.nova-micro-v1:0`**, via the **Converse API**.
 
-## 4. Known blocker (owner action, in progress)
+## 4. Blocker encountered and resolved
 
-Brand-new AWS account: Bedrock returns *"Your account is currently being verified…
-you may not have access to this operation."* Everything else in the chain is proven
-working (GitHub collection succeeds inside Lambda; only the Bedrock call is refused).
-Owner steps: (a) Bedrock console → Model access → enable Nova Lite + Nova Micro,
-(b) wait for account verification (< 2 h typical), then tell the agent to retry
-`POST /analyze`. No redeploy needed.
+Brand-new AWS account initially refused Bedrock (*"account currently being verified"*)
+and S3/CloudFormation (`NotSignedUp`/`OptInRequired`). Owner completed signup +
+enabled **Nova Lite + Nova Micro** model access; agent retried and the full chain went
+green. No code changes were needed — see row 10 above.
 
 ## 5. How deployment WAS verified (agent runbook, with results)
 
